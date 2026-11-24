@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101318">
+  <meta name="description" content="在交互地球上探索全球空中航班的真实观测快照。">
+  <title>全球航班分布 · 航班气象图谱</title>
+  <style><!-- STYLE --></style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="top-inner">
+      <a class="brand" href="global.html"><span class="brand-icon" aria-hidden="true">✈</span><span>航班气象图谱</span></a>
+      <nav aria-label="项目页面">
+        <a href="global.html" aria-current="page">全球航班</a>
+        <a href="flow.html">航线流量</a>
+      </nav>
+      <div class="top-snapshot"><i></i> 历史快照</div>
+    </div>
+  </header>
+  <main class="workspace">
+    <section class="intro">
+      <div><p class="english-title">GLOBAL AIR TRAFFIC</p><h1>全球航班分布</h1></div>
+      <div class="snapshot-time"><span>观测时间 <b>北京时间</b></span><time id="snapshot-time"></time></div>
+    </section>
+    <div class="layout">
+      <section class="map" aria-label="全球航班地图">
+        <div class="map-toolbar">
+          <div class="switch" role="group" aria-label="地图投影">
+            <button type="button" data-view="globe" aria-pressed="true">地球</button>
+            <button type="button" data-view="flat" aria-pressed="false">平面</button>
+          </div>
+          <div class="switch" role="group" aria-label="显示图层">
+            <button type="button" data-layer="planes" aria-pressed="true"><span aria-hidden="true">✈</span> 飞机</button>
+            <button type="button" data-layer="density" aria-pressed="false"><span aria-hidden="true">▦</span> 密度</button>
+            <button type="button" data-layer="countries" aria-pressed="false">国家和地区</button>
+          </div>
+        </div>
+        <div class="stage" id="stage">
+          <canvas id="earth" aria-hidden="true"></canvas>
+          <canvas id="traffic" tabindex="0" aria-label="全球观测地图，使用方向键移动，加减号缩放，回车选择视图中心附近的观测点" aria-describedby="map-help"></canvas>
+          <div class="map-hint" id="map-help">放大查看国家和城市</div>
+          <div class="zoom" role="group" aria-label="地图缩放和复位">
+            <button type="button" id="zoom-in" aria-label="放大">+</button>
+            <button type="button" id="zoom-out" aria-label="缩小">−</button>
+            <button type="button" id="reset" aria-label="复位视图" title="复位视图">↺</button>
+          </div>
+          <div class="map-popup" id="map-popup" hidden></div>
+          <button class="selection-link" type="button" id="selection-link" hidden></button>
+          <span class="center-readout" id="center-readout" aria-hidden="true"></span>
+          <span class="map-scale" id="map-scale" role="status">全球概览</span>
+        </div>
+        <div class="map-footer">
+          <span id="legend"></span>
+          <div class="region-buttons" role="group" aria-label="切换观察区域">
+            <button type="button" data-region="atlantic" aria-pressed="true">大西洋</button>
+            <button type="button" data-region="america" aria-pressed="false">美洲</button>
+            <button type="button" data-region="europe" aria-pressed="false">欧非</button>
+            <button type="button" data-region="asia" aria-pressed="false">亚太</button>
+          </div>
+        </div>
+      </section>
+      <aside class="sidebar" aria-label="观测统计和飞机详情">
+        <section class="overview">
+          <h2>快照观测</h2>
+          <div class="main-count"><strong id="total-count"></strong><span>架空中飞机</span></div>
+          <div class="view-count"><span>当前视图</span><strong id="visible-count"></strong></div>
+          <div class="country-panel" id="country-panel" tabindex="-1">
+            <div class="country-head"><label for="country-search">国家和地区</label><button type="button" data-country="all">全部</button></div>
+            <input id="country-search" type="search" placeholder="搜索国家或地区" autocomplete="off">
+            <div class="country-summary" id="country-summary" aria-live="polite"></div>
+            <div id="country-results" class="country-results" aria-label="各国家和地区的观测架数"></div>
+          </div>
+          <div class="filter-head"><label for="altitude">高度筛选</label></div>
+          <select id="altitude">
+            <option value="all">全部高度</option>
+            <option value="low">低于 3,000 米</option>
+            <option value="mid">3,000–8,999 米</option>
+            <option value="high">9,000 米及以上</option>
+            <option value="missing">高度缺失</option>
+          </select>
+          <div id="altitude-bars" class="altitude-bars" aria-label="按高度的观测分布"></div>
+        </section>
+        <section class="detail" id="detail" tabindex="-1" aria-live="polite">
+          <h2>飞机详情</h2>
+          <p>点击地图上的飞机，查看该位置的高度、地速和航向。</p>
+        </section>
+        <details class="method">
+          <summary>数据说明</summary>
+          <p>保留快照时处于空中、带坐标且位置报告距快照不超过 60 秒的飞机。页面使用观测序号和取整后的字段。分布反映接收网络在该时刻的观测覆盖。</p>
+          <p>高度优先采用气压高度，缺失时采用几何高度。密度图按经纬度 5° × 5° 网格统计飞机数量。</p>
+          <p>国家和地区统计将快照中的坐标与 Natural Earth 陆地边界匹配，表示该位置上空的观测架数。陆地边界外的海上观测及未匹配的位置单列。</p>
+          <a href="https://github.com/openskynetwork/opensky-api/blob/master/docs/free/rest.rst" target="_blank" rel="noopener">OpenSky 数据字段 ↗</a>
+          <a href="https://opensky-network.org/about/terms-of-use" target="_blank" rel="noopener">数据使用条款 ↗</a>
+          <a href="https://www.naturalearthdata.com/downloads/10m-cultural-vectors/" target="_blank" rel="noopener">Natural Earth 国家和地区边界 ↗</a>
+          <a href="https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/" target="_blank" rel="noopener">Natural Earth 城市地名 ↗</a>
+          <a href="https://svs.gsfc.nasa.gov/2915" target="_blank" rel="noopener">NASA Blue Marble ↗</a>
+        </details>
+      </aside>
+    </div>
+    <footer><span>位置数据 <a href="https://opensky-network.org/" target="_blank" rel="noopener">The OpenSky Network</a></span><span>地球影像 <a href="https://svs.gsfc.nasa.gov/2915" target="_blank" rel="noopener">NASA / GSFC</a></span></footer>
+  </main>
+  <noscript>请启用 JavaScript 查看全球航班分布。</noscript>
+  <script type="application/json" id="snapshot"><!-- SNAPSHOT --></script>
+  <script type="application/json" id="countries"><!-- COUNTRIES --></script>
+  <script type="application/json" id="cities"><!-- CITIES --></script>
+  <script><!-- COUNTRY CODE --></script>
+  <script type="text/plain" id="texture"><!-- TEXTURE --></script>
+  <script><!-- COMPONENT --></script>
+</body>
+</html>

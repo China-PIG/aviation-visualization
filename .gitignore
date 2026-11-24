@@ -1,0 +1,5 @@
+/.preview/
+__pycache__/
+*.py[cod]
+/data/opensky/flightlist_*.csv.gz
+/data/opensky/aggregate.pkl

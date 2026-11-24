@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101318">
+  <meta name="description" content="在全球底图上按城市、国家和洲观察航班流量的强弱与逐日变化。">
+  <title>全球航班流量 · 航班气象图谱</title>
+  <style><!-- STYLE --></style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="top-inner">
+            <nav aria-label="项目页面">
+        <a href="flow.html" aria-current="page">航线流量</a>
+      </nav>
+      <div class="top-snapshot"><i></i> 历史航班样本</div>
+    </div>
+  </header>
+  <main class="workspace">
+    <section class="intro">
+      <div>
+        <p class="english-title">GLOBAL FLIGHT FLOWS</p>
+        <h1>全球航班流量</h1>
+        <p class="lede">城市之间的连线越亮、越粗，粒子流得越快，说明这个方向的航班越密。缩小地图时，城市会聚合成国家、再聚合成洲，连线也随层级重新汇总；切月份可对比不同时期。</p>
+      </div>
+      <div class="period">
+        <span>当前窗口</span>
+        <strong id="period-date">—</strong>
+        <small id="period-note">—</small>
+      </div>
+    </section>
+    <div class="layout">
+      <section class="map" aria-label="全球航班流量地图">
+        <div class="map-toolbar">
+          <div class="switch" role="group" aria-label="视图">
+            <button type="button" data-view="flat" aria-pressed="true">平面</button>
+            <button type="button" data-view="globe" aria-pressed="false">地球</button>
+          </div>
+          <div class="switch" role="group" aria-label="洲筛选" id="region-filter"></div>
+          <button type="button" id="map-fullscreen">全屏</button>
+        </div>
+        <div class="stage" id="stage">
+          <canvas id="map" tabindex="0" aria-label="航班流量地图，滚轮缩放，拖动平移，悬停查看城市、国家和洲"></canvas>
+          <div class="map-hint">滚轮缩放切换层级 · 拖动平移 · 点击国家放大到城市</div>
+          <span class="map-scale" id="map-scale" role="status">层级 · 洲</span>
+          <div class="zoom" role="group" aria-label="缩放与复位">
+            <button type="button" id="zoom-in" aria-label="放大">+</button>
+            <button type="button" id="zoom-out" aria-label="缩小">−</button>
+            <button type="button" id="reset" aria-label="复位视图" title="复位视图">↺</button>
+          </div>
+          <div class="map-popup" id="popup" hidden></div>
+          <p class="map-empty" id="map-empty" hidden>当前筛选下没有可绘制的航线</p>
+          <div class="calendar" id="calendar" aria-label="日期日历"></div>
+        </div>
+        <div class="timeline">
+          <button type="button" class="play" id="play" aria-pressed="false"><span aria-hidden="true">▶</span> 播放</button>
+          <div class="days" id="days" aria-label="逐日班次，点击定位日期"></div>
+          <span class="day-readout" id="day-readout"></span>
+        </div>
+        <div class="map-footer">
+          <span class="legend" id="legend"></span>
+          <span class="coverage" id="coverage">航班：OpenSky 观测 · 底图：Natural Earth</span>
+        </div>
+      </section>
+      <aside class="sidebar" aria-label="窗口统计">
+        <section class="overview">
+          <h2>窗口流量</h2>
+          <div class="main-count"><strong id="total">0</strong><span>班</span></div>
+          <div class="sub-count">
+            <span>日均 <b id="daily">0</b> 班</span>
+            <span>航线 <b id="pairs">0</b> 条</span>
+            <span>层级 <b id="tier">洲</b></span>
+          </div>
+          <div class="region-bars" id="region-bars" aria-label="按洲统计的航班量"></div>
+          <h3 class="bars-title">中国大区</h3>
+          <div class="region-bars" id="china-bars" aria-label="按中国大区统计的航班量"></div>
+        </section>
+        <section class="ranking">
+          <div class="ranking-head"><h3 id="top-heading">流量最大的洲之间</h3><span>班次</span></div>
+          <ol id="top-routes"></ol>
+        </section>
+        <section class="notes">
+          <h3>怎么看</h3>
+          <p>颜色、线宽、粒子数量和流速都由窗口内的班次量映射：越亮越粗、流得越快，说明这个方向航班越密。</p>
+          <p>缩放切换层级：城市层看城市之间的航线，国家层把城市聚合成 118 个国家，洲层再聚合成 5 个洲。节点会随缩放滑向上一级的位置，连线交叉淡入淡出。</p>
+          <p>点国家节点可放大到该国的城市；国家太大不适合一次框完时，会落到它流量最大的城市。</p>
+          <p>城市层只画每月班次较多的城市对（阈值见「数据来源与统计口径」），国家层与洲层是完整汇总。</p>
+        </section>
+      </aside>
+    </div>
+    <details class="method">
+      <summary>数据来源与统计口径</summary>
+      <div class="method-body">
+        <p>航班来自 OpenSky Network 的月度航班清单（CC BY 4.0），包含 2019 年 1 月与 2021 年 12 月两个整月。清单只保留观测到且能推断出起降机场的航段；原始文件约有一半航段缺少一端机场，无法计入。中国部分由 2015 年 1 月中国国内样本补齐，按日对齐到这两个月呈现。</p>
+        <p>统计窗口为「当日」「近 7 日」（截至所选日）和「整月」；月份可切换。城市层只绘制每月班次不少于约 400 班、且两端城市都在样本内的城市对；国家层与洲层由全部航段汇总，不受该阈值影响。</p>
+        <p>不同月份的接收站数量不同（2021 年明显多于 2019 年），因此各月观测到的班次总量不能直接当作实际流量比较；中国部分为 2015 年样本，在各月中数值基本不变。</p>
+        <p>颜色、线宽、粒子数量与流速都由窗口内班次量经幂函数缩放后映射，避免个别大航线压过其余航线。城市坐标取该城机场坐标的平均值，国家与洲的中心按城市坐标平均。</p>
+        <p>缩放层级把城市对逐级汇总为国家、洲：节点在层级之间滑向上一级的聚合位置，连线按当前层级权重交叉淡入淡出，因此在任何缩放刻度上都能看到连续的过渡，而不是硬切换。</p>
+        <div class="sources">
+          <a href="https://opensky-network.org/data/historical" target="_blank" rel="noopener">OpenSky 历史航班数据 ↗</a>
+          <a href="https://opensky-network.org/about/terms-of-use" target="_blank" rel="noopener">OpenSky 使用条款 ↗</a>
+          <a href="https://davidmegginson.github.io/ourairports-data/" target="_blank" rel="noopener">OurAirports 机场表 ↗</a>
+          <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth 底图 ↗</a>
+        </div>
+      </div>
+    </details>
+    <footer><span>航班数据 <a href="https://opensky-network.org/" target="_blank" rel="noopener">The OpenSky Network</a> · CC BY 4.0</span><span>底图 <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a> · 机场坐标 <a href="https://ourairports.com/data/" target="_blank" rel="noopener">OurAirports</a></span></footer>
+  </main>
+  <noscript>请启用 JavaScript 查看全球航班流量。</noscript>
+  <script type="application/json" id="flow-data"><!-- FLOW DATA --></script>
+  <script type="application/json" id="world-countries"><!-- COUNTRIES --></script>
+  <script type="application/json" id="world-cities"><!-- CITIES --></script>
+  <script><!-- COMPONENT --></script>
+</body>
+</html>
